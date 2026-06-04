@@ -1,0 +1,109 @@
+blueprint:
+  name: Aqara W100 zigbee2mqtt Action Mappings
+  description: Custom buttons action for Aqara W100 Temp Display/Sensor. for Zigbee2mqtt only.
+  domain: automation
+  input:
+    device:
+      name: device
+      description: The Aqara W100 climate sensor to use
+      selector:
+        device:
+          filter:
+            - integration: mqtt
+              manufacturer: Aqara
+              model: Climate Sensor W100
+          multiple: false
+    base_topic:
+      name: Zigbee2MQTT Base mqtt topic
+      description:
+        The base topic configured in Zigbee2MQTT. If you haven't changed
+        this, leave the default here ("zigbee2mqtt")
+      default: zigbee2mqtt
+    action_single_plus:
+      name: single plus
+      default: []
+      selector:
+        action: {}
+    action_double_plus:
+      name: double plus
+      default: []
+      selector:
+        action: {}
+    action_hold_plus:
+      name: hold plus
+      default: []
+      selector:
+        action: {}
+    action_single_center:
+      name: single center
+      default: []
+      selector:
+        action: {}
+    action_double_center:
+      name: double center
+      default: []
+      selector:
+        action: {}
+    action_hold_center:
+      name: hold center
+      default: []
+      selector:
+        action: {}
+    action_single_minus:
+      name: single minus
+      default: []
+      selector:
+        action: {}
+    action_double_minus:
+      name: double minus
+      default: []
+      selector:
+        action: {}
+    action_hold_minus:
+      name: hold minus
+      default: []
+      selector:
+        action: {}
+mode: restart
+max_exceeded: silent
+trigger_variables:
+  device: !input device
+  base_topic: !input base_topic
+variables:
+  device_topic: "{{ base_topic }}/{{ device_attr(device, 'name') }}/action"
+trigger:
+  - trigger: mqtt
+    topic: "{{ base_topic }}/+/action"
+    id: buttons
+
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - buttons
+        sequence:
+          - choose:
+              - conditions:
+                  - "{{ trigger.payload != ''}}"
+                  - "{{ trigger.topic == device_topic }}"
+                sequence:
+                  - choose:
+                      - conditions: "{{ trigger.payload == 'single_plus' }}"
+                        sequence: !input action_single_plus
+                      - conditions: "{{ trigger.payload == 'single_center' }}"
+                        sequence: !input action_single_center
+                      - conditions: "{{ trigger.payload == 'single_minus' }}"
+                        sequence: !input action_single_minus
+                      - conditions: "{{ trigger.payload == 'double_plus' }}"
+                        sequence: !input action_double_plus
+                      - conditions: "{{ trigger.payload == 'double_center' }}"
+                        sequence: !input action_double_center
+                      - conditions: "{{ trigger.payload == 'double_minus' }}"
+                        sequence: !input action_double_minus
+                      - conditions: "{{ trigger.payload == 'hold_plus' }}"
+                        sequence: !input action_hold_plus
+                      - conditions: "{{ trigger.payload == 'hold_center' }}"
+                        sequence: !input action_hold_center
+                      - conditions: "{{ trigger.payload == 'hold_minus' }}"
+                        sequence: !input action_double_minus

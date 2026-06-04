@@ -1,0 +1,72 @@
+blueprint:
+  name: Aqara W100 zigbee2mqtt External Sensor Mappings
+  description: Hassio climat control, external probe management and custom buttons action. for Zigbee2mqtt only.
+  domain: automation
+  input:
+    device:
+      name: device
+      description: The Aqara W100 climate sensor to use
+      selector:
+        device:
+          filter:
+            - integration: mqtt
+              manufacturer: Aqara
+              model: Climate Sensor W100
+          multiple: false
+    base_topic:
+      name: Zigbee2MQTT Base mqtt topic
+      description:
+        The base topic configured in Zigbee2MQTT. If you haven't changed
+        this, leave the default here ("zigbee2mqtt")
+      default: zigbee2mqtt
+    humidity_sensor:
+      name: External Sensor for humidity
+      description: The external sensor to display humidity values from
+      selector:
+        entity:
+          device_class:
+            - humidity
+          multiple: false
+    temperature_sensor:
+      name: External Sensor for temperature
+      description: The external sensor to display temperature values from
+      selector:
+        entity:
+          device_class:
+            - temperature
+          multiple: false
+
+mode: restart
+max_exceeded: silent
+trigger_variables:
+  device: !input device
+  base_topic: !input base_topic
+  humidity_sensor: !input humidity_sensor
+  temperature_sensor: !input temperature_sensor
+
+variables:
+  device_topic: "{{ base_topic }}/{{ device_attr(device, 'name') }}/action"
+trigger:
+  - trigger: state
+    entity_id:
+      - !input humidity_sensor
+      - !input temperature_sensor
+    id: sensor
+
+action:
+  - choose:
+      - conditions:
+          - condition: trigger
+            id:
+              - sensor
+        sequence:
+          - action: number.set_value
+            target:
+              entity_id: "{{ device_entities(device) | select('search', '_external_humidity$') | list | first }}"
+            data_template:
+              value: "{{states(humidity_sensor)}}"
+          - action: number.set_value
+            target:
+              entity_id: "{{ device_entities(device) | select('search', '_external_temperature$') | list | first }}"
+            data_template:
+              value: "{{states(temperature_sensor)}}"
